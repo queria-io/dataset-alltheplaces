@@ -15,13 +15,14 @@ zip は全世界で 3GB 近いので、末尾の目次だけを読み、日本�
 データソース: AllThePlaces https://www.alltheplaces.xyz/
 """
 
+import http.client
 import io
 import json
 import logging
 import time
 import zipfile
 from pathlib import Path
-from urllib.error import HTTPError, URLError
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 logger = logging.getLogger("pipelines")
@@ -52,7 +53,8 @@ def _request(request: Request, read):
             if error.code < 500 or attempt == REQUEST_RETRIES:
                 raise
             reason = error
-        except (URLError, TimeoutError, ConnectionError) as error:
+        # 本文の途中で切れたとき（IncompleteRead）や TLS の失敗も一時的なものとして扱う
+        except (OSError, http.client.HTTPException) as error:
             if attempt == REQUEST_RETRIES:
                 raise
             reason = error
@@ -102,10 +104,20 @@ class _RangeFile(io.RawIOBase):
         if self.position >= self.size or len(buffer) == 0:
             return 0
         end = min(self.size, self.position + len(buffer)) - 1
-        data = _open(self.url, {"Range": f"bytes={self.position}-{end}"})
+        request = Request(
+            self.url,
+            headers={"User-Agent": USER_AGENT, "Range": f"bytes={self.position}-{end}"},
+        )
+        data = _request(request, self._read_partial)
         buffer[: len(data)] = data
         self.position += len(data)
         return len(data)
+
+    def _read_partial(self, response) -> bytes:
+        # Range を無視して 200 で返されると、全世界の zip（約2.7GB）を丸ごと読むことになる
+        if response.status != 206:
+            raise RuntimeError(f"{self.url}: Range が効かない (HTTP {response.status})")
+        return response.read()
 
 
 def latest_run() -> dict:
@@ -133,7 +145,9 @@ def download_places(run: dict) -> None:
     output = OUTPUT_DIR / "place.ndjson"
 
     size = _content_length(run["output_url"])
-    archive = zipfile.ZipFile(io.BufferedReader(_RangeFile(run["output_url"], size), 1 << 20))
+    # 読むたびにバッファの大きさまで先読みする。日本向けのスパイダーのファイルは
+    # 9割が 1MB 未満なので、大きく取ると隣のファイルまで取って転送量が数倍になる
+    archive = zipfile.ZipFile(io.BufferedReader(_RangeFile(run["output_url"], size), 1 << 16))
     in_archive = {
         Path(name).stem for name in archive.namelist() if name.endswith(".geojson")
     }
@@ -144,26 +158,27 @@ def download_places(run: dict) -> None:
 
     rows = 0
     seen: set[tuple[str, str]] = set()
-    dropped = {"outside": 0, "duplicate": 0}
+    dropped = {"country": 0, "geometry": 0, "outside": 0, "duplicate": 0}
     partial = output.with_name(output.name + ".part")
     with partial.open("w", encoding="utf-8") as handle:
         for spider in domestic + international:
             if spider not in in_archive:
                 logger.warning("%s: not in archive", spider)
                 continue
+            is_international = not spider.endswith("_jp")
             kept = 0
             for feature in _features(archive, spider):
-                properties = dict(feature.get("properties") or {})
-                # 取得元の API の URL。サイトに埋め込まれた API キーを含むことがあるので持たない
-                properties.pop("@source_uri", None)
-                geometry = feature.get("geometry") or {}
+                properties = feature.get("properties") or {}
                 country = properties.get("addr:country")
-                if spider in international and country != "JP":
+                if is_international and country != "JP":
                     continue
                 # 日本向けのスパイダーにも国外の店舗が混ざることがある
                 if country not in (None, "", "JP"):
+                    dropped["country"] += 1
                     continue
+                geometry = feature.get("geometry") or {}
                 if geometry.get("type") != "Point":
+                    dropped["geometry"] += 1
                     continue
                 lon, lat = geometry["coordinates"][:2]
                 # 国コードが JP でも、座標が国外を指しているものがある（数十件）
@@ -179,6 +194,8 @@ def download_places(run: dict) -> None:
                     dropped["duplicate"] += 1
                     continue
                 seen.add(key)
+                # 取得元の API の URL。サイトに埋め込まれた API キーを含むことがあるので持たない
+                properties.pop("@source_uri", None)
                 row = {
                     "id": feature.get("id"),
                     "spider": spider,
@@ -191,13 +208,18 @@ def download_places(run: dict) -> None:
                 kept += 1
             rows += kept
             logger.info("%s: %d", spider, kept)
-    partial.replace(output)
 
     logger.info(
-        "places: %d rows (dropped %d outside Japan, %d duplicates)",
+        "places: %d rows (dropped %d other countries, %d non-point, "
+        "%d outside Japan, %d duplicates)",
         rows,
+        dropped["country"],
+        dropped["geometry"],
         dropped["outside"],
         dropped["duplicate"],
     )
     if rows == 0:
+        # 前回の place.ndjson を空のファイルで置き換えない
+        partial.unlink()
         raise RuntimeError(f"run {run['run_id']} has no place in Japan")
+    partial.replace(output)
