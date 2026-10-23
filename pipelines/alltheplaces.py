@@ -15,15 +15,13 @@ zip は全世界で 3GB 近いので、末尾の目次だけを読み、日本�
 データソース: AllThePlaces https://www.alltheplaces.xyz/
 """
 
-import http.client
 import io
 import json
 import logging
-import time
 import zipfile
 from pathlib import Path
-from urllib.error import HTTPError
-from urllib.request import Request, urlopen
+
+from shared.fetch import RangeFile, fetch, replacing
 
 logger = logging.getLogger("pipelines")
 
@@ -36,88 +34,12 @@ OUTPUT_DIR = Path("data/places")
 # 与那国島 東経 122.93 / 南鳥島 東経 153.98
 JAPAN_BBOX = {"xmin": 122.0, "xmax": 154.5, "ymin": 20.0, "ymax": 46.0}
 
+# スパイダーのファイルは大きいもので数十MBある
 REQUEST_TIMEOUT = 120
-# 一時的な失敗（5xx・接続断・タイムアウト）で取得全体を落とさないための再試行。
-# 待ち時間は 5, 10, 20, 40 秒
-REQUEST_RETRIES = 4
-RETRY_BACKOFF = 5
 
 
-def _request(request: Request, read):
-    url = request.full_url
-    for attempt in range(REQUEST_RETRIES + 1):
-        try:
-            with urlopen(request, timeout=REQUEST_TIMEOUT) as response:
-                return read(response)
-        except HTTPError as error:
-            if error.code < 500 or attempt == REQUEST_RETRIES:
-                raise
-            reason = error
-        # 本文の途中で切れたとき（IncompleteRead）や TLS の失敗も一時的なものとして扱う
-        except (OSError, http.client.HTTPException) as error:
-            if attempt == REQUEST_RETRIES:
-                raise
-            reason = error
-        wait = RETRY_BACKOFF * 2**attempt
-        logger.warning("retry in %ds: %s (%s)", wait, url, reason)
-        time.sleep(wait)
-    raise AssertionError("unreachable")
-
-
-def _open(url: str, headers: dict[str, str] | None = None) -> bytes:
-    request = Request(url, headers={"User-Agent": USER_AGENT, **(headers or {})})
-    return _request(request, lambda response: response.read())
-
-
-def _content_length(url: str) -> int:
-    request = Request(url, headers={"User-Agent": USER_AGENT}, method="HEAD")
-    return _request(request, lambda response: int(response.headers["Content-Length"]))
-
-
-class _RangeFile(io.RawIOBase):
-    """HTTP の Range で読む、シーク可能な読み取り専用ファイル。zipfile に渡す。"""
-
-    def __init__(self, url: str, size: int) -> None:
-        self.url = url
-        self.size = size
-        self.position = 0
-
-    def readable(self) -> bool:
-        return True
-
-    def seekable(self) -> bool:
-        return True
-
-    def tell(self) -> int:
-        return self.position
-
-    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
-        if whence == io.SEEK_SET:
-            self.position = offset
-        elif whence == io.SEEK_CUR:
-            self.position += offset
-        else:
-            self.position = self.size + offset
-        return self.position
-
-    def readinto(self, buffer) -> int:
-        if self.position >= self.size or len(buffer) == 0:
-            return 0
-        end = min(self.size, self.position + len(buffer)) - 1
-        request = Request(
-            self.url,
-            headers={"User-Agent": USER_AGENT, "Range": f"bytes={self.position}-{end}"},
-        )
-        data = _request(request, self._read_partial)
-        buffer[: len(data)] = data
-        self.position += len(data)
-        return len(data)
-
-    def _read_partial(self, response) -> bytes:
-        # Range を無視して 200 で返されると、全世界の zip（約2.7GB）を丸ごと読むことになる
-        if response.status != 206:
-            raise RuntimeError(f"{self.url}: Range が効かない (HTTP {response.status})")
-        return response.read()
+def _open(url: str) -> bytes:
+    return fetch(url, user_agent=USER_AGENT, timeout=REQUEST_TIMEOUT)
 
 
 def latest_run() -> dict:
@@ -144,10 +66,10 @@ def download_places(run: dict) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     output = OUTPUT_DIR / "place.ndjson"
 
-    size = _content_length(run["output_url"])
+    source = RangeFile(run["output_url"], user_agent=USER_AGENT, timeout=REQUEST_TIMEOUT)
     # 読むたびにバッファの大きさまで先読みする。日本向けのスパイダーのファイルは
     # 9割が 1MB 未満なので、大きく取ると隣のファイルまで取って転送量が数倍になる
-    archive = zipfile.ZipFile(io.BufferedReader(_RangeFile(run["output_url"], size), 1 << 16))
+    archive = zipfile.ZipFile(io.BufferedReader(source, 1 << 16))
     in_archive = {
         Path(name).stem for name in archive.namelist() if name.endswith(".geojson")
     }
@@ -159,8 +81,8 @@ def download_places(run: dict) -> None:
     rows = 0
     seen: set[tuple[str, str]] = set()
     dropped = {"country": 0, "geometry": 0, "outside": 0, "duplicate": 0}
-    partial = output.with_name(output.name + ".part")
-    with partial.open("w", encoding="utf-8") as handle:
+    # 途中で失敗したときと0件のときは、前回の place.ndjson を残す
+    with replacing(output) as partial, partial.open("w", encoding="utf-8") as handle:
         for spider in domestic + international:
             if spider not in in_archive:
                 logger.warning("%s: not in archive", spider)
@@ -209,17 +131,14 @@ def download_places(run: dict) -> None:
             rows += kept
             logger.info("%s: %d", spider, kept)
 
-    logger.info(
-        "places: %d rows (dropped %d other countries, %d non-point, "
-        "%d outside Japan, %d duplicates)",
-        rows,
-        dropped["country"],
-        dropped["geometry"],
-        dropped["outside"],
-        dropped["duplicate"],
-    )
-    if rows == 0:
-        # 前回の place.ndjson を空のファイルで置き換えない
-        partial.unlink()
-        raise RuntimeError(f"run {run['run_id']} has no place in Japan")
-    partial.replace(output)
+        logger.info(
+            "places: %d rows (dropped %d other countries, %d non-point, "
+            "%d outside Japan, %d duplicates)",
+            rows,
+            dropped["country"],
+            dropped["geometry"],
+            dropped["outside"],
+            dropped["duplicate"],
+        )
+        if rows == 0:
+            raise RuntimeError(f"run {run['run_id']} has no place in Japan")
