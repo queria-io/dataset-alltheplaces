@@ -1,0 +1,5 @@
+version: 2
+
+models:
+- name: place
+  description: AllThePlaces の日本の施設。raw_place のタグから、ブランド・名前・種類・住所・連絡先・座標を列にしたもの。

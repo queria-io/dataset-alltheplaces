@@ -1,0 +1,28 @@
+schema: places
+name: raw_place
+title: 日本の施設（タグのまま）
+description: places.place と同じ施設を、AllThePlaces の GeoJSON の properties（OpenStreetMap のタグ）のまま JSON で持つ。place に無いタグ（取扱商品・設備・決済手段・駐車場・言語別の名前など）はここにある。タグの意味は OpenStreetMap の Wiki（https://wiki.openstreetmap.org/wiki/Map_features）を参照。取得元の API の URL（@source_uri）は除いてある。
+keywords:
+- POI
+- 施設
+- OpenStreetMap
+published: true
+sources:
+- path: https://www.alltheplaces.xyz/
+fields:
+- name: id
+  title: AllThePlaces の ID
+  description: スパイダーの中で施設を識別する ID。スパイダーをまたぐと重なることがあるので、spider と組で使う
+- name: spider
+  title: スパイダー名
+  description: 施設を集めたスパイダー。日本向けは _jp で終わる（seven_eleven_jp など）
+- name: lon
+  title: 経度
+- name: lat
+  title: 緯度
+- name: properties
+  title: タグ
+  description: OpenStreetMap のタグの JSON（brand / brand:wikidata / shop / amenity / addr:full / opening_hours など）
+- name: run_id
+  title: 実行 ID
+  description: 取り込んだ AllThePlaces の実行。実行の開始日時（UTC）

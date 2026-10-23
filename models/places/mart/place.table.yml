@@ -1,0 +1,81 @@
+schema: places
+name: place
+title: 日本の施設
+description: AllThePlaces が各社の公式サイトの店舗検索から集めた日本の施設。1行が1施設で、チェーン店のほか郵便局・ATM・自動販売機・公衆電話・AED などの無人の設備を含む。店舗として数えるときは is_unattended が false の行に絞る。個人店はほとんど収録されない（調剤薬局のように、チェーンの店舗検索に系列外の店舗が載っている場合だけ入る）。同じ店舗が複数のスパイダーから入ることがあり（銀行の ATM とコンビニなど）、その場合は別の行になる。
+keywords:
+- POI
+- 施設
+- 店舗
+- チェーン店
+- ブランド
+- GIS
+published: true
+sources:
+- path: https://www.alltheplaces.xyz/
+fields:
+- name: place_id
+  title: 施設 ID
+  description: spider と AllThePlaces の ID を / でつないだもの。この表で一意。実行をまたいでも同じ施設には同じ値が付くことが多い
+- name: spider
+  title: スパイダー名
+  description: 施設を集めたスパイダー。日本向けは _jp で終わる（seven_eleven_jp など）
+- name: brand
+  title: ブランド
+  description: brand:ja、無ければ brand。チェーンに属さない施設は NULL
+- name: brand_en
+  title: ブランド（英語）
+- name: brand_wikidata
+  title: ブランドの Wikidata ID
+  description: 表記の違うブランド名をまとめるときのキー（セブン-イレブンは Q259340）
+- name: name
+  title: 名称
+  description: name:ja、無ければ name。ブランド名だけのことが多く、店舗名は branch にある
+- name: branch
+  title: 店舗名
+  description: 支店名・店舗名（「南７条」「日野駅前店」など）
+- name: ref
+  title: 店舗番号
+  description: 各社が振る店舗コード
+- name: category_key
+  title: 種類のキー
+  description: OpenStreetMap で施設の種類を表すキー（shop / amenity / leisure / tourism / office / healthcare / craft / emergency）。どれも無ければ NULL
+- name: category
+  title: 種類
+  description: category_key の値。shop=convenience（コンビニ）、shop=chemist（ドラッグストア）、amenity=fast_food、amenity=vending_machine など
+- name: is_unattended
+  title: 無人の設備
+  description: 自動販売機・郵便ポスト・ATM・公衆電話・AED・シェアサイクルのポート・駐輪場・駐車場・証明写真機・宅配ロッカー・コインロッカー・充電スタンドなら true。店舗として数えるときは除く
+- name: address
+  title: 住所
+  description: addr:full、無ければ都道府県・市区町村・番地をつないだもの。表記はスパイダーごとに揃っていない
+- name: postcode
+  title: 郵便番号
+- name: province
+  title: 都道府県
+  description: 入っていないスパイダーが多い
+- name: city
+  title: 市区町村
+  description: 入っていないスパイダーが多い
+- name: phone
+  title: 電話番号
+- name: website
+  title: Web サイト
+  description: 各社の店舗ページ
+- name: opening_hours
+  title: 営業時間
+  description: OpenStreetMap の opening_hours の書式（Mo-Fr 09:00-21:00 など）
+- name: operator
+  title: 運営者
+- name: lat
+  title: 緯度
+- name: lon
+  title: 経度
+- name: geometry
+  title: 位置
+  description: 施設の位置を表す POINT
+- name: run_id
+  title: 実行 ID
+  description: 取り込んだ AllThePlaces の実行。実行の開始日時（UTC）
+- name: run_date
+  title: 実行日
+  description: 実行の開始日。各社のサイトを読んだのはこの日から数日のうち
