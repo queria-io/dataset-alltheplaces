@@ -21,7 +21,7 @@ import logging
 import zipfile
 from pathlib import Path
 
-from shared.fetch import RangeFile, fetch, replacing
+from shared.fetch import RangeFile, RangeNotSupported, download, fetch, replacing
 
 logger = logging.getLogger("pipelines")
 
@@ -57,6 +57,26 @@ def japan_spiders(insights_url: str) -> set[str]:
     return spiders
 
 
+def _open_archive(url: str) -> zipfile.ZipFile:
+    """配布 zip を開く。Range が効けば目次と要るメンバーだけを読む。
+
+    配信元（Cloudflare）は、要求を送る場所によって Range を無視して全体を返す
+    （手元では 206、GitHub のランナーでは 200 だった）。そのときは全体（約2.7GB）を
+    data/places/output.zip に落としてから読む。ファイルは次の実行で上書きする。
+    """
+    try:
+        source = RangeFile(url, user_agent=USER_AGENT, timeout=REQUEST_TIMEOUT)
+        # 読むたびにバッファの大きさまで先読みする。日本向けのスパイダーのファイルは
+        # 9割が 1MB 未満なので、大きく取ると隣のファイルまで取って転送量が数倍になる
+        return zipfile.ZipFile(io.BufferedReader(source, 1 << 16))
+    except RangeNotSupported as error:
+        logger.warning("%s; downloading the whole archive", error)
+    path = OUTPUT_DIR / "output.zip"
+    size = download(url, path, user_agent=USER_AGENT, timeout=REQUEST_TIMEOUT)
+    logger.info("downloaded %s (%d bytes)", path, size)
+    return zipfile.ZipFile(path)
+
+
 def _features(archive: zipfile.ZipFile, spider: str) -> list[dict]:
     data = json.loads(archive.read(f"output/{spider}.geojson"))
     return data.get("features") or []
@@ -66,10 +86,7 @@ def download_places(run: dict) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     output = OUTPUT_DIR / "place.ndjson"
 
-    source = RangeFile(run["output_url"], user_agent=USER_AGENT, timeout=REQUEST_TIMEOUT)
-    # 読むたびにバッファの大きさまで先読みする。日本向けのスパイダーのファイルは
-    # 9割が 1MB 未満なので、大きく取ると隣のファイルまで取って転送量が数倍になる
-    archive = zipfile.ZipFile(io.BufferedReader(source, 1 << 16))
+    archive = _open_archive(run["output_url"])
     in_archive = {
         Path(name).stem for name in archive.namelist() if name.endswith(".geojson")
     }

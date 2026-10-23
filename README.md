@@ -53,7 +53,7 @@ place と同じ施設を、AllThePlaces の GeoJSON の properties（OpenStreetM
 
 ## データ更新手順
 
-main.py が AllThePlaces の[最新の実行](https://data.alltheplaces.xyz/runs/latest.json)を調べ、配布 zip（全世界で約2.7GB）のうち日本の施設を持つスパイダーのファイルだけを HTTP の Range で取ります（約130MB）。複数の国を回るスパイダーのうち日本の施設を持つものは、実行の統計（`stats/_insights.json`）から選びます。そのあと dbt build で各テーブルを作り直します。ビルドは `bash scripts/build.sh` で実行します（Queria に公開する）。
+main.py が AllThePlaces の[最新の実行](https://data.alltheplaces.xyz/runs/latest.json)を調べ、配布 zip（全世界で約2.7GB）のうち日本の施設を持つスパイダーのファイルだけを HTTP の Range で取ります（約130MB）。配信元が Range を無視して全体を返したとき（GitHub のランナーから取るとこうなる）は、zip 全体を data/places/output.zip（約2.7GB、次の実行で上書き）に落としてから読みます。複数の国を回るスパイダーのうち日本の施設を持つものは、実行の統計（`stats/_insights.json`）から選びます。そのあと dbt build で各テーブルを作り直します。ビルドは `bash scripts/build.sh` で実行します（Queria に公開する）。
 
 取り込みでは次のものを除いています。
 
