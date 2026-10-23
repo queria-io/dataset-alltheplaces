@@ -53,10 +53,12 @@ place と同じ施設を、AllThePlaces の GeoJSON の properties（OpenStreetM
 
 ## データ更新手順
 
-main.py が AllThePlaces の最新の実行（`https://data.alltheplaces.xyz/runs/latest.json`）を調べ、配布 zip（全世界で約2.7GB）のうち日本の施設を持つスパイダーのファイルだけを HTTP の Range で取ります（約130MB）。複数の国を回るスパイダーのうち日本の施設を持つものは、実行の統計（`stats/_insights.json`）から選びます。そのあと dbt build で各テーブルを作り直します。ビルドは `bash scripts/build.sh` で実行します（Queria に公開する）。
+main.py が AllThePlaces の[最新の実行](https://data.alltheplaces.xyz/runs/latest.json)を調べ、配布 zip（全世界で約2.7GB）のうち日本の施設を持つスパイダーのファイルだけを HTTP の Range で取ります（約130MB）。複数の国を回るスパイダーのうち日本の施設を持つものは、実行の統計（`stats/_insights.json`）から選びます。そのあと dbt build で各テーブルを作り直します。ビルドは `bash scripts/build.sh` で実行します（Queria に公開する）。
 
 取り込みでは次のものを除いています。
 
+- 国コードが JP 以外の施設（日本向けのスパイダーに混ざる国外の店舗、数十件）
+- 位置が点でない施設（座標の無いものなど、約1,200件）
 - 座標が日本の外接矩形から外れる施設（数十件）
 - 同じスパイダーが同じ ID で2回出した施設の2件目（数件）
 - 取得元の API の URL（@source_uri タグ）。サイトに埋め込まれた API キーを含むことがあるため
@@ -68,6 +70,6 @@ AllThePlaces は毎週土曜に実行を始め、配布物がそろうのは水�
 AllThePlaces のデータは [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) で提供されています。スパイダーのソースコードは [MIT ライセンス](https://github.com/alltheplaces/alltheplaces/blob/master/LICENSE)です。
 
 出典:
-AllThePlaces（https://www.alltheplaces.xyz/）。元のデータは各社が公式サイトに掲載している店舗情報です。
+[AllThePlaces](https://www.alltheplaces.xyz/)。元のデータは各社が公式サイトに掲載している店舗情報です。
 
 日本の施設の取り出しと、タグを列に平坦化する加工を行っています。
