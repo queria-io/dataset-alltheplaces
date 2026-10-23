@@ -1,0 +1,35 @@
+name: Sync
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "models/**"
+      - "tests/**"
+      - "pipelines/**"
+      - "main.py"
+      - "dbt_project.yml"
+      - "profiles.yml"
+      - "packages.yml"
+      - "dataset.yml"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".python-version"
+      - "shared"
+      - ".github/workflows/sync.yml"
+  schedule:
+    # AllThePlaces は毎週土曜 13:30 UTC に全スパイダーを回し始め、配布物が揃うのは
+    # 水曜ごろ。揃ったあとの木曜に取り直す
+    - cron: "0 19 * * 4" # 毎週金曜 04:00 JST
+  workflow_dispatch:
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    uses: queria-io/dataset-shared/.github/workflows/sync.yml@main
+    with:
+      dataset_name: alltheplaces
+    secrets: inherit

@@ -1,0 +1,5 @@
+version: 2
+
+models:
+- name: raw_place
+  description: AllThePlaces の最新の実行のうち日本の施設。GeoJSON の properties（OpenStreetMap のタグ）を JSON のまま持つ。
