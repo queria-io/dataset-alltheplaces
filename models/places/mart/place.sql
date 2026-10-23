@@ -13,7 +13,15 @@ with tagged as (
             when properties->>'healthcare' is not null then 'healthcare'
             when properties->>'craft' is not null then 'craft'
             when properties->>'emergency' is not null then 'emergency'
-        end as category_key
+        end as category_key,
+        -- addr:state に都道府県を入れるスパイダーもある。番号を入れるもの（nissan）は使わない
+        coalesce(
+            properties->>'addr:province',
+            case
+                when regexp_matches(properties->>'addr:state', '[都道府県]$')
+                    then properties->>'addr:state'
+            end
+        ) as province
     from {{ ref('raw_place') }}
 )
 
@@ -46,13 +54,13 @@ select
     coalesce(
         properties->>'addr:full',
         nullif(concat_ws(' ',
-            properties->>'addr:province',
+            province,
             properties->>'addr:city',
             properties->>'addr:street_address'
         ), '')
     ) as address,
     properties->>'addr:postcode' as postcode,
-    properties->>'addr:province' as province,
+    province,
     properties->>'addr:city' as city,
     properties->>'phone' as phone,
     properties->>'website' as website,

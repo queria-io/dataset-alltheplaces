@@ -52,7 +52,7 @@ fields:
   title: 郵便番号
 - name: province
   title: 都道府県
-  description: 入っていないスパイダーが多い
+  description: addr:province、無ければ都道府県名の入った addr:state。入っていないスパイダーが多い
 - name: city
   title: 市区町村
   description: 入っていないスパイダーが多い
