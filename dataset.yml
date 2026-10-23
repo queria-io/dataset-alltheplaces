@@ -1,0 +1,53 @@
+spec_version: "0.1"
+name: alltheplaces
+title: AllThePlaces（日本）
+description: |-
+  チェーン店・郵便局・ATM・自動販売機など、全国約84万件の施設の位置。AllThePlaces が各社の公式サイトの店舗検索から集めたもので、コンビニ・ドラッグストア・ファストフード・ガソリンスタンド・携帯ショップなど、チェーンの店舗はブランドごとに公式の店舗一覧とほぼ同じ件数がそろう。
+  1行が1施設で、ブランド（名前と Wikidata ID）、店舗名、店舗番号、OpenStreetMap のタグで表した施設の種類、住所、電話番号、営業時間、緯度経度を持つ。
+  自動販売機・郵便ポスト・ATM・公衆電話・AED などの無人の設備が約7割を占める。店舗として数えるときは is_unattended で除く。
+  個人店はほとんど収録されない（調剤薬局のように、チェーンの店舗検索に系列外の店舗が載っている場合だけ入る）。毎週、AllThePlaces の最新の実行から取り直す。
+
+  出典: AllThePlaces（https://www.alltheplaces.xyz/）。データは CC0 1.0 で提供されている。
+  元のデータは各社が公式サイトに掲載している店舗情報で、AllThePlaces のスパイダー（MIT ライセンス）が読み取ったもの。
+  Queria が最新の実行から、日本向けのスパイダーの全件と、複数の国を回るスパイダーのうち国コードが JP の施設を取り出し、タグを列に平坦化した。取得元の API の URL（@source_uri）は収録していない。
+keywords:
+  - POI
+  - 施設
+  - 店舗
+  - チェーン店
+  - ブランド
+  - コンビニ
+  - ドラッグストア
+  - 飲食店
+  - ガソリンスタンド
+  - 郵便局
+  - ATM
+  - 自動販売機
+  - AED
+  - 地図
+  - GIS
+  - OpenStreetMap
+homepage: https://github.com/queria-io/dataset-alltheplaces
+language: ja
+
+licenses:
+  - CC0-1.0
+
+sources:
+  - title: AllThePlaces
+    path: https://www.alltheplaces.xyz/
+  - title: AllThePlaces（スパイダーのソースコード）
+    path: https://github.com/alltheplaces/alltheplaces
+
+contributors:
+  - title: AllThePlaces contributors
+    path: https://github.com/alltheplaces/alltheplaces
+    roles: [rightsHolder]
+
+spatial_coverage: [JP]
+update_frequency: weekly
+cover: 🏪
+
+schemas:
+  - name: places
+    title: 施設
