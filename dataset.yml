@@ -29,6 +29,7 @@ keywords:
   - OpenStreetMap
 homepage: https://github.com/queria-io/dataset-alltheplaces
 language: ja
+themes: [commerce_services]
 
 licenses:
   - CC0-1.0
