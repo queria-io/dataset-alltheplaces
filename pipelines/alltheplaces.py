@@ -78,8 +78,11 @@ def _open_archive(url: str) -> zipfile.ZipFile:
 
 
 def _features(archive: zipfile.ZipFile, spider: str) -> list[dict]:
-    data = json.loads(archive.read(f"output/{spider}.geojson"))
-    return data.get("features") or []
+    raw = archive.read(f"output/{spider}.geojson")
+    # 何も取れなかったスパイダーは空のファイルになる
+    if not raw.strip():
+        return []
+    return json.loads(raw).get("features") or []
 
 
 def download_places(run: dict) -> None:
