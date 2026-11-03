@@ -82,7 +82,13 @@ def _features(archive: zipfile.ZipFile, spider: str) -> list[dict]:
     # 何も取れなかったスパイダーは空のファイルになる
     if not raw.strip():
         return []
-    return json.loads(raw).get("features") or []
+    try:
+        data = json.loads(raw)
+    except json.JSONDecodeError as error:
+        # 途中で切れたファイルが混ざる回がある。1 つのスパイダーで全体を止めず飛ばす
+        logger.warning("%s: unreadable geojson (%s), skipped", spider, error)
+        return []
+    return data.get("features") or []
 
 
 def download_places(run: dict) -> None:
