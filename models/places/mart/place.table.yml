@@ -1,7 +1,12 @@
 schema: places
 name: place
 title: 日本の施設
-description: AllThePlaces が各社の公式サイトの店舗検索から集めた日本の施設。1行が1施設で、チェーン店のほか郵便局・ATM・自動販売機・公衆電話・AED などの無人の設備を含む。店舗として数えるときは is_unattended が false の行に絞る。個人店はほとんど収録されない（調剤薬局のように、チェーンの店舗検索に系列外の店舗が載っている場合だけ入る）。同じ店舗が複数のスパイダーから入ることがあり（銀行の ATM とコンビニなど）、その場合は別の行になる。
+description: |-
+  日本の施設の位置です。1 行が 1 施設で、ブランド・店舗名・施設の種類・住所・営業時間を持ちます。
+
+  - 約 7 割は自動販売機・ATM・郵便ポストなどの無人の設備です。店舗として数えるときは `is_unattended` が false の行に絞ってください
+  - 個人店はほとんど収録されていません
+  - 同じ店舗が複数のスパイダーから別の行で入ることがあります（コンビニとその中の銀行 ATM など）
 keywords:
 - POI
 - 施設
@@ -15,7 +20,7 @@ sources:
 fields:
 - name: place_id
   title: 施設 ID
-  description: spider と AllThePlaces の ID を / でつないだもの。この表で一意。実行をまたいでも同じ施設には同じ値が付くことが多い
+  description: spider と AllThePlaces の ID を / でつないだもの。このテーブルで一意
 - name: spider
   title: スパイダー名
   description: 施設を集めたスパイダー。日本向けは _jp で終わる（seven_eleven_jp など）
@@ -38,21 +43,21 @@ fields:
   description: 各社が振る店舗コード
 - name: category_key
   title: 種類のキー
-  description: OpenStreetMap で施設の種類を表すキー（shop / amenity / leisure / tourism / office / healthcare / craft / emergency）。どれも無ければ NULL
+  description: OpenStreetMap のキー（shop / amenity / leisure など）
 - name: category
   title: 種類
-  description: category_key の値。shop=convenience（コンビニ）、shop=chemist（ドラッグストア）、amenity=fast_food、amenity=vending_machine など
+  description: category_key の値（convenience・chemist・fast_food など）
 - name: is_unattended
   title: 無人の設備
-  description: 自動販売機・郵便ポスト・ATM・公衆電話・AED・シェアサイクルのポート・駐輪場・駐車場・証明写真機・宅配ロッカー・コインロッカー・充電スタンドなら true。店舗として数えるときは除く
+  description: 自動販売機・ATM・郵便ポスト・AED などの無人の設備なら true
 - name: address
   title: 住所
-  description: addr:full、無ければ都道府県・市区町村・番地をつないだもの。表記はスパイダーごとに揃っていない
+  description: addr:full、無ければ都道府県・市区町村・番地。表記はスパイダーごとに違う
 - name: postcode
   title: 郵便番号
 - name: province
   title: 都道府県
-  description: addr:province、無ければ都道府県名の入った addr:state。入っていないスパイダーが多い
+  description: addr:province か addr:state。入っていないスパイダーが多い
 - name: city
   title: 市区町村
   description: 入っていないスパイダーが多い
