@@ -1,4 +1,6 @@
-spec_version: "0.1"
+# この dataset.yml は fdl commit が読む（FDL の dataset.json を YAML で書いたもの）。
+# 表の説明は models/ の *.table.yml に書く。表と列の型・NULL・行数は fdl commit がカタログから埋める。
+# Queria だけの項目（テーマ・カバー・AI 向けの説明・列の意味）は annotations.queria に書く。
 name: alltheplaces
 title: AllThePlaces（日本）
 description: |-
@@ -24,7 +26,6 @@ keywords:
   - OpenStreetMap
 homepage: https://github.com/queria-io/dataset-alltheplaces
 language: ja
-themes: [commerce_services]
 
 licenses:
   - CC0-1.0
@@ -42,8 +43,11 @@ contributors:
 
 spatial_coverage: [JP]
 update_frequency: weekly
-cover: 🏪
 
 schemas:
   - name: places
     title: 施設
+annotations:
+  queria:
+    themes: [commerce_services]
+    cover: 🏪
