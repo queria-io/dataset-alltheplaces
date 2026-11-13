@@ -21,3 +21,6 @@ package-lock.yml
 data/
 *.duckdb
 dist/
+
+# fdl checkout の作業カタログ
+.fdl/

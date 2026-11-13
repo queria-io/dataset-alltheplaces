@@ -29,7 +29,12 @@ concurrency:
 
 jobs:
   sync:
-    uses: queria-io/dataset-shared/.github/workflows/sync.yml@main
+    # Queria への書き込みは GitHub Actions の OIDC で 1 時間のトークンを取って行う
+    permissions:
+      contents: read
+      id-token: write
+    uses: queria-io/dataset-shared/.github/workflows/sync.yml@dc0e5caa95da02a5303726dca8df5dec26c94322
     with:
       dataset_name: alltheplaces
-    secrets: inherit
+    secrets:
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
