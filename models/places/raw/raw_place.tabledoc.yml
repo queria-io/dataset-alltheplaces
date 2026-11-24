@@ -1,0 +1,29 @@
+$schema: https://tabledoc.queria.io/schemas/table/v1.json
+title: 日本の施設（タグのまま）
+description: |-
+  `places.place` と同じ施設を、AllThePlaces の OpenStreetMap のタグのまま JSON で持ちます。
+
+  - 取扱商品・設備・決済手段・言語別の名前など、`place` に無いタグはここにあります。タグの意味は [OpenStreetMap の Wiki](https://wiki.openstreetmap.org/wiki/Map_features) を参照してください
+topics:
+  - POI
+  - 施設
+  - OpenStreetMap
+sources:
+  - alltheplaces
+columns:
+  - name: id
+    title: AllThePlaces の ID
+    description: スパイダーの中で施設を識別する ID。spider と組で一意
+  - name: spider
+    title: スパイダー名
+    description: 施設を集めたスパイダー。日本向けは _jp で終わる（seven_eleven_jp など）
+  - name: lon
+    title: 経度
+  - name: lat
+    title: 緯度
+  - name: properties
+    title: タグ
+    description: OpenStreetMap のタグの JSON（brand・shop・addr:full など）
+  - name: run_id
+    title: 実行 ID
+    description: 取り込んだ AllThePlaces の実行。実行の開始日時（UTC）

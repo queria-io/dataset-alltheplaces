@@ -1,4 +1,4 @@
-{# raw_place のタグを平坦化した日本の施設。列の選び方は place.table.yml。 #}
+{# raw_place のタグを平坦化した日本の施設。列の選び方は place.tabledoc.yml。 #}
 
 with tagged as (
     select
@@ -22,7 +22,7 @@ with tagged as (
                     then properties->>'addr:state'
             end
         ) as province
-    from {{ ref('raw_place') }}
+    from {{ ref('stg_place') }}
 )
 
 select

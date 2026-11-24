@@ -11,11 +11,14 @@ on:
       - "dbt_project.yml"
       - "profiles.yml"
       - "packages.yml"
-      - "dataset.yml"
+      - "scripts/**"
+      # 説明 (tabledoc.yml・<model>.tabledoc.yml・Markdown) だけの変更は、ビルドを回さずに説明の新しいバージョンを作る
+      - "tabledoc.yml"
+      - "cover.png"
+      - "**.md"
       - "pyproject.toml"
       - "uv.lock"
       - ".python-version"
-      - "shared"
       - ".github/workflows/sync.yml"
   schedule:
     # AllThePlaces は毎週土曜 13:30 UTC に全スパイダーを回し始め、配布物が揃うのは
@@ -33,7 +36,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    uses: queria-io/dataset-shared/.github/workflows/sync.yml@dc0e5caa95da02a5303726dca8df5dec26c94322
+    uses: queria-io/dataset-shared/.github/workflows/sync.yml@main
     with:
       dataset_name: alltheplaces
     secrets:

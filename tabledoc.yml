@@ -1,13 +1,12 @@
-# この dataset.yml は fdl commit が読む（FDL の dataset.json を YAML で書いたもの）。
-# 表の説明は models/ の *.table.yml に書く。表と列の型・NULL・行数は fdl commit がカタログから埋める。
-# Queria だけの項目（テーマ・カバー・AI 向けの説明・列の意味）は annotations.queria に書く。
+$schema: https://tabledoc.queria.io/schemas/dataset/v1.json
 name: alltheplaces
 title: AllThePlaces（日本）
 description: |-
   チェーン店・郵便局・ATM・自動販売機など、全国約 84 万件の施設の位置です。AllThePlaces が各社の公式サイトの店舗検索から集めたもので、チェーンの店舗はブランドごとに公式の店舗一覧とほぼ同じ件数があり、毎週取得し直します。
 
   出典：AllThePlaces（CC0 1.0）。Queria が加工したものです。
-keywords:
+image: cover.png
+topics:
   - POI
   - 施設
   - 店舗
@@ -24,30 +23,25 @@ keywords:
   - 地図
   - GIS
   - OpenStreetMap
-homepage: https://github.com/queria-io/dataset-alltheplaces
 language: ja
-
 licenses:
   - CC0-1.0
-
 sources:
-  - title: AllThePlaces
-    path: https://www.alltheplaces.xyz/
-  - title: AllThePlaces（スパイダーのソースコード）
-    path: https://github.com/alltheplaces/alltheplaces
-
+  - id: alltheplaces
+    title: AllThePlaces
+    url: https://www.alltheplaces.xyz/
+  - id: alltheplaces-2
+    title: AllThePlaces（スパイダーのソースコード）
+    url: https://github.com/alltheplaces/alltheplaces
 contributors:
-  - title: AllThePlaces contributors
-    path: https://github.com/alltheplaces/alltheplaces
-    roles: [rightsHolder]
-
-spatial_coverage: [JP]
+  - id: alltheplaces
+    title: AllThePlaces contributors
+    url: https://github.com/alltheplaces/alltheplaces
+    roles:
+      - rightsHolder
+spatial_coverage:
+  - JP
 update_frequency: weekly
-
 schemas:
   - name: places
     title: 施設
-annotations:
-  queria:
-    themes: [commerce_services]
-    cover: 🏪
