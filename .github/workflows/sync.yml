@@ -11,11 +11,14 @@ on:
       - "dbt_project.yml"
       - "profiles.yml"
       - "packages.yml"
-      - "dataset.yml"
+      - "scripts/**"
+      # 説明 (tabledoc.yml・<model>.tabledoc.yml・Markdown) だけの変更は、ビルドを回さずに説明の新しいバージョンを作る
+      - "tabledoc.yml"
+      - "cover.png"
+      - "**.md"
       - "pyproject.toml"
       - "uv.lock"
       - ".python-version"
-      - "shared"
       - ".github/workflows/sync.yml"
   schedule:
     # AllThePlaces は毎週土曜 13:30 UTC に全スパイダーを回し始め、配布物が揃うのは
