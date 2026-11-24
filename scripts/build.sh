@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-# 記述 (*.table.yml) の無いテーブルは掲載しない
-export FDL_UNDESCRIBED="${FDL_UNDESCRIBED:-unlisted}"
+# 説明 (<model>.tabledoc.yml) の無いテーブルは Queria の一覧と検索に出さない
+export FDL_UNDESCRIBED="${FDL_UNDESCRIBED:-hidden}"
 exec "$(dirname "$0")/../shared/scripts/build-fdl.sh" "$@"
