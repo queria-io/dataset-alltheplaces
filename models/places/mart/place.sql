@@ -22,7 +22,7 @@ with tagged as (
                     then properties->>'addr:state'
             end
         ) as province
-    from {{ ref('raw_place') }}
+    from {{ ref('stg_place') }}
 )
 
 select
